@@ -1,0 +1,51 @@
+{
+  "name": "myconnect",
+  "version": "1.0.0",
+  "main": "expo-router/entry",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "lint": "eslint . --ext .ts,.tsx",
+    "type-check": "tsc --noEmit",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@expo/vector-icons": "^14.0.0",
+    "@react-native-async-storage/async-storage": "1.23.1",
+    "@supabase/supabase-js": "^2.43.4",
+    "expo": "~51.0.0",
+    "expo-av": "~14.0.0",
+    "expo-constants": "~16.0.0",
+    "expo-font": "~12.0.0",
+    "expo-haptics": "~13.0.0",
+    "expo-image-picker": "~15.0.0",
+    "expo-linear-gradient": "~13.0.0",
+    "expo-linking": "~6.3.0",
+    "expo-router": "~3.5.0",
+    "expo-secure-store": "~13.0.0",
+    "expo-splash-screen": "~0.27.0",
+    "expo-speech": "~12.0.0",
+    "expo-status-bar": "~1.12.0",
+    "nativewind": "^4.0.1",
+    "react": "18.2.0",
+    "react-native": "0.74.1",
+    "react-native-gesture-handler": "~2.16.0",
+    "react-native-reanimated": "~3.10.0",
+    "react-native-safe-area-context": "4.10.1",
+    "react-native-screens": "3.31.1",
+    "react-native-url-polyfill": "^2.0.0",
+    "zustand": "^4.5.2"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.24.0",
+    "@types/react": "~18.2.45",
+    "@types/react-native": "^0.73.0",
+    "eslint": "^8.57.0",
+    "eslint-config-expo": "~7.0.0",
+    "tailwindcss": "^3.4.3",
+    "typescript": "~5.3.3"
+  },
+  "private": true
+}
