@@ -2,6 +2,7 @@
 // Deploy with: supabase functions deploy parse-shout
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import Anthropic from 'npm:@anthropic-ai/sdk';
 
 interface ParseRequest {
   raw_text: string;
@@ -36,8 +37,10 @@ serve(async (req: Request) => {
       );
     }
 
-    const apiKey = Deno.env.get('OPENAI_API_KEY');
-    if (!apiKey) throw new Error('OPENAI_API_KEY not configured');
+    const apiKey = Deno.env.get('ANTHROPIC_API_KEY');
+    if (!apiKey) throw new Error('ANTHROPIC_API_KEY not configured');
+
+    const client = new Anthropic({ apiKey });
 
     const systemPrompt = `You are the AI parser for MyConnect, a professional trust network.
 Your job is to extract structured information from a user's professional service request.
@@ -59,30 +62,14 @@ Guidelines:
 - draft_text should be professional, concise, and start with "Need" or "Looking for"
 - Do NOT include markdown, explanation, or any text outside the JSON object.`;
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        max_tokens: 400,
-        temperature: 0.2,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: raw_text },
-        ],
-      }),
+    const message = await client.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 400,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: raw_text }],
     });
 
-    if (!response.ok) {
-      const err = await response.text();
-      throw new Error(`OpenAI error: ${err}`);
-    }
-
-    const data = await response.json();
-    const content = data.choices?.[0]?.message?.content ?? '{}';
+    const content = message.content[0].type === 'text' ? message.content[0].text : '{}';
     const parsed: ParseResponse = JSON.parse(content);
 
     return new Response(JSON.stringify(parsed), {
