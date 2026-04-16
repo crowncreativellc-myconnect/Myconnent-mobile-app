@@ -34,7 +34,7 @@ const SKILL_SUGGESTIONS = [
 ];
 
 export default function RegisterScreen() {
-  const { signUp, isLoading } = useAuth();
+  const { signUp, signInWithFacebook, isLoading } = useAuth();
   const [form, setForm] = useState<FormState>({
     fullName: '',
     email: '',
@@ -73,6 +73,14 @@ export default function RegisterScreen() {
     if (!validate()) return;
     setErrors({});
     const result = await signUp(form.email, form.password, form.fullName.trim());
+    if (result.error) {
+      setErrors({ general: result.error.message });
+    }
+  };
+
+  const handleFacebookSignIn = async () => {
+    setErrors({});
+    const result = await signInWithFacebook();
     if (result.error) {
       setErrors({ general: result.error.message });
     }
@@ -193,6 +201,25 @@ export default function RegisterScreen() {
               fullWidth
               size="lg"
             />
+
+            {/* Divider */}
+            <View className="flex-row items-center gap-x-3 my-5">
+              <View className="flex-1 h-px bg-surface-border" />
+              <Text className="text-text-muted text-sm">or</Text>
+              <View className="flex-1 h-px bg-surface-border" />
+            </View>
+
+            {/* Facebook OAuth */}
+            <TouchableOpacity
+              onPress={handleFacebookSignIn}
+              disabled={isLoading}
+              activeOpacity={0.8}
+              className="flex-row items-center justify-center gap-x-3 bg-[#1877F2] rounded-2xl py-4 px-6"
+              style={{ opacity: isLoading ? 0.6 : 1 }}
+            >
+              <Text className="text-white text-lg font-bold">f</Text>
+              <Text className="text-white font-semibold text-base">Continue with Facebook</Text>
+            </TouchableOpacity>
 
             <Text className="text-text-muted text-xs text-center mt-4">
               By joining, you agree to our Terms of Service and Privacy Policy.
