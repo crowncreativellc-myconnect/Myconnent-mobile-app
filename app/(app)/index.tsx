@@ -144,7 +144,7 @@ export default function HomeScreen() {
   const displayShouts = activeShouts.length > 0 ? activeShouts : STUB_SHOUTS;
 
   const handleShoutPress = useCallback((shout: ShoutOut) => {
-    router.push({ pathname: '/(app)/shout', params: { id: shout.id } });
+    router.push({ pathname: '/(app)/shout/[id]', params: { id: shout.id } });
   }, []);
 
   const ListHeader = () => (
