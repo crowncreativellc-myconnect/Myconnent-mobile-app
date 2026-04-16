@@ -85,7 +85,7 @@ export default function ProfileScreen() {
                 variant="secondary"
                 fullWidth
                 size="sm"
-                onPress={() => {}}
+                onPress={() => router.push('/(app)/profile-edit')}
               />
             </View>
           </Card>
