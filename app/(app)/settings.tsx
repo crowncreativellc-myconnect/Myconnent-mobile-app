@@ -146,7 +146,7 @@ export default function SettingsScreen() {
         <View className="px-5 mb-5">
           <Text className="text-text-muted text-xs font-semibold uppercase tracking-wide mb-2">Account</Text>
           <Card variant="bordered">
-            <SettingRow label="Edit Profile" onPress={() => router.push('/(app)/profile')} />
+            <SettingRow label="Edit Profile" onPress={() => router.push('/(app)/profile-edit')} />
             <SettingRow label="Change Email" onPress={handleChangeEmail} />
             <SettingRow label="Change Password" onPress={handleChangePassword} />
             <SettingRow label="Subscription" value={profile?.is_premium ? 'Premium' : 'Free'} onPress={() => {}} />
