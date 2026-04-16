@@ -74,6 +74,7 @@ export default function AppLayout() {
       />
       <Tabs.Screen name="settings" options={{ href: null }} />
       <Tabs.Screen name="shout/[id]" options={{ href: null }} />
+      <Tabs.Screen name="profile-edit" options={{ href: null }} />
     </Tabs>
   );
 }
