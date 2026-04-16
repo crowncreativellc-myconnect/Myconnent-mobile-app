@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Tabs, router } from 'expo-router';
 import { Text } from 'react-native';
 import { useSession } from '../../src/hooks';
+import { usePushNotifications } from '../../src/hooks/usePushNotifications';
 
 function TabIcon({ emoji, focused }: { emoji: string; focused: boolean }) {
   return <Text style={{ fontSize: 22, opacity: focused ? 1 : 0.5 }}>{emoji}</Text>;
@@ -9,6 +10,7 @@ function TabIcon({ emoji, focused }: { emoji: string; focused: boolean }) {
 
 export default function AppLayout() {
   const { isAuthenticated, isInitialized } = useSession();
+  usePushNotifications();
 
   useEffect(() => {
     if (isInitialized && !isAuthenticated) {
