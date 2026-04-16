@@ -1,8 +1,12 @@
 import { useEffect, useCallback } from 'react';
 import { Session } from '@supabase/supabase-js';
+import * as WebBrowser from 'expo-web-browser';
+import * as Linking from 'expo-linking';
 import { supabase, db } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import type { UserProfile, ApiResult } from '../types';
+
+WebBrowser.maybeCompleteAuthSession();
 
 export function useAuth() {
   const {
@@ -128,6 +132,42 @@ export function useAuth() {
     [setLoading],
   );
 
+  // ─── Facebook OAuth ─────────────────────────────────────────────────────────
+  const signInWithFacebook = useCallback(async (): Promise<ApiResult<Session>> => {
+    setLoading(true);
+    try {
+      const redirectTo = Linking.createURL('/');
+
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'facebook',
+        options: {
+          redirectTo,
+          skipBrowserRedirect: true,
+        },
+      });
+
+      if (error) throw error;
+      if (!data.url) throw new Error('No OAuth URL returned from Supabase');
+
+      const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+
+      if (result.type !== 'success') {
+        return { data: null, error: { message: 'Facebook sign-in was cancelled' } };
+      }
+
+      const { data: sessionData, error: sessionError } =
+        await supabase.auth.exchangeCodeForSession(result.url);
+
+      if (sessionError) throw sessionError;
+      return { data: sessionData.session!, error: null };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Facebook sign-in failed';
+      return { data: null, error: { message } };
+    } finally {
+      setLoading(false);
+    }
+  }, [setLoading]);
+
   // ─── Sign Out ───────────────────────────────────────────────────────────────
   const signOut = useCallback(async (): Promise<void> => {
     setLoading(true);
@@ -166,6 +206,7 @@ export function useAuth() {
     isAuthenticated: session !== null,
     signIn,
     signUp,
+    signInWithFacebook,
     signOut,
     resetPassword,
     refreshProfile: () => session?.user?.id ? fetchProfile(session.user.id) : Promise.resolve({ data: null, error: { message: 'No session' } }),
