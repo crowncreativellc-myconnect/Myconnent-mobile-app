@@ -6,6 +6,7 @@ import { Card } from '../../src/components/Card';
 import { Avatar } from '../../src/components/Avatar';
 import { useSession } from '../../src/hooks/useSession';
 import { useAuth } from '../../src/hooks/useAuth';
+import { supabase } from '../../src/lib/supabase';
 
 interface SettingRowProps {
   label: string;
@@ -65,6 +66,42 @@ export default function SettingsScreen() {
     );
   };
 
+  const handleChangePassword = async () => {
+    if (!profile?.email) return;
+    const { error } = await supabase.auth.resetPasswordForEmail(profile.email, {
+      redirectTo: 'myconnect://reset-password',
+    });
+    if (error) {
+      Alert.alert('Error', error.message);
+    } else {
+      Alert.alert(
+        'Check your inbox',
+        `A password reset link has been sent to ${profile.email}.`,
+      );
+    }
+  };
+
+  const handleChangeEmail = () => {
+    Alert.prompt(
+      'Change Email',
+      'Enter your new email address:',
+      async (newEmail) => {
+        if (!newEmail?.trim()) return;
+        const { error } = await supabase.auth.updateUser({ email: newEmail.trim().toLowerCase() });
+        if (error) {
+          Alert.alert('Error', error.message);
+        } else {
+          Alert.alert(
+            'Confirm your new email',
+            `A confirmation link has been sent to ${newEmail.trim()}. Click it to complete the change.`,
+          );
+        }
+      },
+      'plain-text',
+      profile?.email ?? '',
+    );
+  };
+
   const handleDeleteAccount = () => {
     Alert.alert(
       'Delete Account',
@@ -109,9 +146,9 @@ export default function SettingsScreen() {
         <View className="px-5 mb-5">
           <Text className="text-text-muted text-xs font-semibold uppercase tracking-wide mb-2">Account</Text>
           <Card variant="bordered">
-            <SettingRow label="Edit Profile" onPress={() => {}} />
-            <SettingRow label="Change Email" onPress={() => {}} />
-            <SettingRow label="Change Password" onPress={() => {}} />
+            <SettingRow label="Edit Profile" onPress={() => router.push('/(app)/profile')} />
+            <SettingRow label="Change Email" onPress={handleChangeEmail} />
+            <SettingRow label="Change Password" onPress={handleChangePassword} />
             <SettingRow label="Subscription" value={profile?.is_premium ? 'Premium' : 'Free'} onPress={() => {}} />
           </Card>
         </View>
