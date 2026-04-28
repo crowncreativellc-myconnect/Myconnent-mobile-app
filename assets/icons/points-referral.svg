@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Arc bridge — the logo referral mark -->
+  <path d="M 5,22 Q 16,2 27,22" stroke="#4F6EF7" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+  <!-- Left node — referrer (blue) -->
+  <circle cx="5" cy="22" r="5" fill="#4F6EF7"/>
+  <!-- Person silhouette in left node -->
+  <circle cx="5" cy="20" r="2" fill="rgba(255,255,255,0.6)"/>
+  <path d="M 2,24 Q 5,26 8,24" stroke="rgba(255,255,255,0.6)" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+  <!-- Right node — referred (green) -->
+  <circle cx="27" cy="22" r="5" fill="#10B981"/>
+  <circle cx="27" cy="20" r="2" fill="rgba(255,255,255,0.6)"/>
+  <path d="M 24,24 Q 27,26 30,24" stroke="rgba(255,255,255,0.6)" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+  <!-- Gold checkmark at apex — job done -->
+  <circle cx="16" cy="6" r="5" fill="#F6C90E"/>
+  <path d="M 13.5,6 L 15.5,8 L 19,4" stroke="#1A1508" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>

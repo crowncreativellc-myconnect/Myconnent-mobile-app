@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Outer dashed trust ring -->
+  <circle cx="16" cy="16" r="13" stroke="#10B981" stroke-width="1" stroke-dasharray="3 3" fill="none" opacity="0.4"/>
+  <!-- Arc connections between nodes -->
+  <path d="M 16 4 Q 27 10 26 22" stroke="#10B981" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.6"/>
+  <path d="M 26 22 Q 16 28 6 22" stroke="#10B981" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.6"/>
+  <path d="M 6 22 Q 5 10 16 4" stroke="#10B981" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.6"/>
+  <!-- Top node — you, gold -->
+  <circle cx="16" cy="4" r="3.5" fill="#F6C90E"/>
+  <!-- Bottom right node — blue -->
+  <circle cx="26" cy="22" r="3.5" fill="#4F6EF7"/>
+  <!-- Bottom left node — green -->
+  <circle cx="6" cy="22" r="3.5" fill="#10B981"/>
+  <!-- Centre node — the connection point -->
+  <circle cx="16" cy="16" r="3" fill="#10B981"/>
+</svg>

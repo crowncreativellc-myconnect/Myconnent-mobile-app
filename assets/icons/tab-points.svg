@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Hexagon outline — Konnect Points symbol -->
+  <polygon points="16,2 28,9 28,23 16,30 4,23 4,9" stroke="#F6C90E" stroke-width="2" fill="none"/>
+  <!-- Rising arc inside — growth/reward -->
+  <path d="M 9 22 Q 12 12 16 9 Q 20 12 23 22" stroke="#F6C90E" stroke-width="2" stroke-linecap="round" fill="none"/>
+  <!-- Peak node — top of arc -->
+  <circle cx="16" cy="9" r="3" fill="#F6C90E"/>
+  <!-- Base nodes -->
+  <circle cx="9" cy="22" r="2.5" fill="#F6C90E" opacity="0.6"/>
+  <circle cx="23" cy="22" r="2.5" fill="#F6C90E" opacity="0.6"/>
+  <!-- Tier marker dots at three hexagon vertices -->
+  <circle cx="16" cy="2" r="2" fill="#4F6EF7"/>
+  <circle cx="28" cy="9" r="2" fill="#7C3AED"/>
+  <circle cx="28" cy="23" r="2" fill="#10B981"/>
+</svg>

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Head circle -->
+  <circle cx="16" cy="12" r="7" stroke="#7C3AED" stroke-width="2" fill="none"/>
+  <!-- Shoulders arc -->
+  <path d="M 3 30 Q 3 21 16 19 Q 29 21 29 30" stroke="#7C3AED" stroke-width="2" stroke-linecap="round" fill="none"/>
+  <!-- Trust halo arc above head — tier ring -->
+  <path d="M 6 12 Q 5 1 16 0 Q 27 1 26 12" stroke="#F6C90E" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+  <!-- Gold founding badge node at top -->
+  <circle cx="16" cy="0" r="3" fill="#F6C90E"/>
+  <!-- Violet side nodes on halo -->
+  <circle cx="6" cy="12" r="2.5" fill="#7C3AED"/>
+  <circle cx="26" cy="12" r="2.5" fill="#7C3AED"/>
+</svg>
