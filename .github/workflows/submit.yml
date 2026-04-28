@@ -1,0 +1,31 @@
+name: EAS Submit
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: 'Platform to submit'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - ios
+          - android
+
+jobs:
+  submit:
+    name: Submit latest production build (${{ inputs.platform }})
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - run: npm ci --legacy-peer-deps
+      - run: eas submit --profile production --platform ${{ inputs.platform }} --latest --non-interactive

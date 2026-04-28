@@ -1,10 +1,8 @@
-name: CI
+name: Release (production OTA)
 
 on:
   push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+    tags: ['v*']
 
 jobs:
   checks:
@@ -21,10 +19,9 @@ jobs:
       - run: npm run type-check
       - run: npm test
 
-  publish-preview:
-    name: Publish OTA update to preview channel
+  publish-production:
+    name: Publish OTA update to production channel
     needs: checks
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -37,4 +34,4 @@ jobs:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
       - run: npm ci --legacy-peer-deps
-      - run: eas update --branch preview --message "${{ github.event.head_commit.message }}" --non-interactive
+      - run: eas update --branch production --message "Release ${{ github.ref_name }}" --non-interactive
