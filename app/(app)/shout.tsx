@@ -225,9 +225,9 @@ export default function ShoutScreen() {
     };
   }, [step, localParse, draftParse]);
 
-  // Debounced pre-screen
+  // Debounced pre-screen — gate at 3 chars so short standalone hits ("zaa", "weed") still screen
   useEffect(() => {
-    if (rawText.trim().length < 10) {
+    if (rawText.trim().length < 3) {
       clearModeration();
       return;
     }

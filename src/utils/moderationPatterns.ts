@@ -68,6 +68,8 @@ const PROHIBITED_CATEGORIES: PatternCategory[] = [
     reason:
       'This request appears to involve the supply, purchase, or distribution of controlled substances.',
     patterns: [
+      // Cannabis street slang standalone — "zaa" / "zaaaa" collapses to "zaa" via normaliser
+      /\b(weed|zaza|zaa|marijuana)\b/i,
       // Hard drug names standalone (post-normalisation covers leet-speak variants)
       /\b(cocaine|heroin|methamphetamine|crystal\s*meth|fentanyl|crack\s*cocaine|mdma|ecstasy|ketamine|oxycontin|xanax)\b/i,
       // Street slang for hard drugs standalone
