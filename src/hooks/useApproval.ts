@@ -163,6 +163,7 @@ export function useApproval() {
       const lastName  = nameParts.slice(1).join(' ') || undefined;
 
       const contact: Contacts.Contact = {
+        name: contactCard.full_name,
         contactType: Contacts.ContactTypes.Person,
         firstName,
         lastName,

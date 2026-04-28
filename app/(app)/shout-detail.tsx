@@ -20,7 +20,6 @@ import type {
   ShoutOut,
   ConnectionApproval,
   ContactCard,
-  UserProfile,
   TrustTier,
 } from '../../src/types';
 
@@ -318,7 +317,7 @@ export default function ShoutDetailScreen() {
         <ContactCardModal
           contactCard={otherCard}
           visible={showModal}
-          onSave={async (card) => {
+          onSave={async () => {
             await handleSaveContacts();
             setShowModal(false);
           }}

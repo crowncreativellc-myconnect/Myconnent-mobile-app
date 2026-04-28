@@ -12,8 +12,6 @@ const GOLD_10  = 'rgba(246,201,14,0.10)';
 const GOLD_06  = 'rgba(246,201,14,0.06)';
 const GOLD_04  = 'rgba(246,201,14,0.04)';
 const GOLD_20  = 'rgba(246,201,14,0.20)';
-const GOLD_40  = 'rgba(246,201,14,0.40)';
-const GOLD_20s = 'rgba(246,201,14,0.20)';
 
 interface ShoutIconProps {
   size?: number;
@@ -46,7 +44,6 @@ export function ShoutIcon({ size = 28, active = false }: ShoutIconProps) {
 
   // Tinted fills — only visible when active
   const bodyFill   = active ? GOLD_10 : 'transparent';
-  const grilleFill = active ? GOLD_20 : 'transparent';
   const hornFill   = active ? GOLD_06 : 'transparent';
   const rimFill    = active ? GOLD_04 : 'transparent';
   const gripFill   = active ? GOLD_20 : 'transparent';

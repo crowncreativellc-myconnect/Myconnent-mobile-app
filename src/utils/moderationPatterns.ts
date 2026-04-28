@@ -35,10 +35,10 @@ export function normaliseInput(raw: string): string {
     .replace(/\+/g, 't')
     .replace(/8/g, 'b')
     // Remove dots between letters used to break up words (c.o.c.a.i.n.e → cocaine)
-    .replace(/([a-z])\.([a-z])/g, '$1$2')
+    .replace(/(?<=[a-z])\.(?=[a-z])/g, '')
     // Remove asterisks / hyphens used as character masks (c*ke → cke, h-e-r-o-i-n → heroin)
     .replace(/\*/g, '')
-    .replace(/([a-z])-([a-z])/g, '$1$2')
+    .replace(/(?<=[a-z])-(?=[a-z])/g, '')
     // Collapse runs of 3+ identical chars to 2 (coooool → cool, drruuugs → drugs)
     .replace(/(.)\1{2,}/g, '$1$1')
     // Normalize whitespace

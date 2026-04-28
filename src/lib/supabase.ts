@@ -47,7 +47,7 @@ export async function invokeEdgeFunction<TBody, TResponse>(
 ): Promise<{ data: TResponse | null; error: Error | null }> {
   try {
     const { data, error } = await supabase.functions.invoke<TResponse>(functionName, {
-      body,
+      body: body as Record<string, unknown>,
     });
     if (error) throw error;
     return { data, error: null };

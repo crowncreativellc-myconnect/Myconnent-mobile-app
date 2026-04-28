@@ -30,7 +30,7 @@ interface FormErrors {
 }
 
 export default function LoginScreen() {
-  const { signIn, signInWithFacebook, isLoading } = useAuth();
+  const { signIn, isLoading } = useAuth();
   const [form, setForm] = useState<FormState>({ email: '', password: '' });
   const [errors, setErrors] = useState<FormErrors>({});
   const [showPassword, setShowPassword] = useState(false);
@@ -90,14 +90,6 @@ export default function LoginScreen() {
     if (!validate()) return;
     setErrors({});
     const result = await signIn(form.email, form.password);
-    if (result.error) {
-      setErrors({ general: result.error.message });
-    }
-  };
-
-  const handleFacebookSignIn = async () => {
-    setErrors({});
-    const result = await signInWithFacebook();
     if (result.error) {
       setErrors({ general: result.error.message });
     }

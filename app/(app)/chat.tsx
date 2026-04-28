@@ -11,7 +11,6 @@ import {
 } from 'react-native';
 import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useSession } from '../../src/hooks/useSession';
 import { useChat } from '../../src/hooks/useChat';
 import { ChatBubble } from '../../src/components/ChatBubble';

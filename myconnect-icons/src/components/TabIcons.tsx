@@ -4,7 +4,6 @@ import Svg, {
   Circle,
   Rect,
   Polygon,
-  G,
 } from 'react-native-svg';
 
 // ─── Color tokens ─────────────────────────────────────────────────────────────

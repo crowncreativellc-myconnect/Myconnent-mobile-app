@@ -14,7 +14,6 @@ export function KonnectPointsBadge({
   points,
   size = 'md',
   showLabel = true,
-  className,
 }: KonnectPointsBadgeProps) {
   const { colors } = useTheme();
   const px = size === 'sm' ? 8 : size === 'lg' ? 16 : 12;
