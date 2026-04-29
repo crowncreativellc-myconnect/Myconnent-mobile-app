@@ -22,7 +22,15 @@ import { db } from '../../src/lib/supabase';
 import { useAvatarUpload } from '../../src/hooks/useAvatarUpload';
 import { useModeration } from '../../src/hooks/useModeration';
 import { formatSkillTag } from '../../src/utils';
+import { runLocalModeration, normaliseInput } from '../../src/utils/moderationPatterns';
 import type { UserProfile } from '../../src/types';
+
+// Words that have legit professional meaning in a sentence (e.g. "sex therapist"
+// in a broadcast) but never as a standalone skill tag. Kept here rather than in
+// shared patterns so the broadcast composer doesn't false-positive on them.
+const SKILL_BARE_WORD_DENYLIST = new Set([
+  'sex', 'sexy', 'nude', 'nudes', 'naked',
+]);
 
 function Field({
   label,
@@ -106,6 +114,16 @@ export default function ProfileEditScreen() {
     const tag = raw.replace(/\s+/g, '_');
     if (!tag || skillTags.includes(tag) || skillTags.length >= 10) return;
 
+    // Skill-specific bare-word denylist — catches single-word skills that the
+    // shared sentence-context patterns let through (e.g. "sex" alone).
+    if (SKILL_BARE_WORD_DENYLIST.has(raw)) {
+      Alert.alert(
+        'Skill not allowed',
+        'This is not appropriate as a professional skill on MyKonnect.',
+      );
+      return;
+    }
+
     // Screen against explicit / illegal / sexual terms before adding.
     // Use the spaced form so \b word boundaries work (underscore is a word char).
     const screenResult = await runPreScreen(raw);
@@ -132,6 +150,26 @@ export default function ProfileEditScreen() {
     if (!fullName.trim()) {
       Alert.alert('Required', 'Full name cannot be empty.');
       return;
+    }
+
+    // Local-pattern moderation on the free-text fields before save.
+    // Layer 1 only (no API call) keeps this fast and avoids three round-trips.
+    const fieldsToScreen: Array<{ label: string; value: string }> = [
+      { label: 'Full Name', value: fullName },
+      { label: 'Headline', value: headline },
+      { label: 'Bio', value: bio },
+    ];
+    for (const { label, value } of fieldsToScreen) {
+      if (!value.trim()) continue;
+      const local = runLocalModeration(normaliseInput(value));
+      if (!local.passed) {
+        Alert.alert(
+          `${label} not allowed`,
+          local.reason ??
+            'This field contains content that is not permitted on MyKonnect.',
+        );
+        return;
+      }
     }
 
     setIsSaving(true);

@@ -43,6 +43,11 @@ describe('runLocalModeration — sexual exploitation solicitation', () => {
     'gimme some hoes',
     'pimping out girls',
     'pimping women for money',
+    // Standalone — caught even without solicitation framing
+    'pimp',
+    'pimps',
+    'hoe',
+    'hoes',
   ])('blocks solicitation phrase: %s', (input) => {
     const result = runLocalModeration(normaliseInput(input));
     expect(result.passed).toBe(false);

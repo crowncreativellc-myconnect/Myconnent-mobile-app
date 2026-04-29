@@ -138,6 +138,11 @@ const PROHIBITED_CATEGORIES: PatternCategory[] = [
       /\b(leak[s]?|leaked)\b.{0,20}\b(nude|naked|explicit|celeb|celebrity)\b/i,
       // Slang solicitation terms
       /\b(lewds?|thot|hoe\s*for\s*hire)\b/i,
+      // Standalone pimp / hoe slang — caught even without solicitation framing.
+      // Edge case: "pimp my ride" / "hoe to weed my garden" are blocked too;
+      // acceptable on a verified professional network where neither phrasing
+      // is appropriate.
+      /\b(pimps?|hoes?)\b/i,
       // Solicitation of hoes/pimps in "need/want/looking for" framing
       /\b(need|want|find\s*me|get\s*me|looking\s*for|gimme)\b.{0,15}\b(a\s+|some\s+|the\s+)?(pimps?|hoes?)\b/i,
       // Pimping someone out (trafficking-adjacent)
