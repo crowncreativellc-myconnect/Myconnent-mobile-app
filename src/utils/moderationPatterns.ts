@@ -138,6 +138,10 @@ const PROHIBITED_CATEGORIES: PatternCategory[] = [
       /\b(leak[s]?|leaked)\b.{0,20}\b(nude|naked|explicit|celeb|celebrity)\b/i,
       // Slang solicitation terms
       /\b(lewds?|thot|hoe\s*for\s*hire)\b/i,
+      // Solicitation of hoes/pimps in "need/want/looking for" framing
+      /\b(need|want|find\s*me|get\s*me|looking\s*for|gimme)\b.{0,15}\b(a\s+|some\s+|the\s+)?(pimps?|hoes?)\b/i,
+      // Pimping someone out (trafficking-adjacent)
+      /\bpimp(ing)?\b.{0,15}\b(out\s+)?(women|girls?|hoes?|whores?|sex\s*workers?|escorts?)\b/i,
       // Trafficking-adjacent exploitation
       /\b(recruit|find|manage|run)\b.{0,25}\b(girls?|women|models?)\b.{0,30}\b(for\s*)?(sex|adult\s*content|escort(ing)?|companionship)\b/i,
     ],
@@ -289,6 +293,39 @@ const PROHIBITED_CATEGORIES: PatternCategory[] = [
       /\b(hack|break\s*into|get\s*into|bypass|pwn)\b.{0,30}\b(phone|email|gmail|icloud|instagram|facebook|whatsapp|snapchat|account|messages?|device)\b/i,
     ],
   },
+
+  // ─── profanity — generic curse words, kept last so more serious categories
+  // (drugs, exploitation, weapons, violence) match first when both apply ───────
+  {
+    label: 'profanity',
+    reason:
+      'This shout-out contains profanity or inappropriate language. Please keep messages respectful and professional.',
+    patterns: [
+      /\bfuck(ing|er|ers|ed|s|in)?\b/i,
+      /\bmotherfuck(er|ers|ing)?\b/i,
+      /\bshit(ty|ting|ted|s|head|heads|hole|holes)?\b/i,
+      /\bbullshit\b/i,
+      /\bbitch(es|ing|y)?\b/i,
+      /\b(son\s+of\s+a\s+bitch|sonofabitch)\b/i,
+      /\bcunt(s|y)?\b/i,
+      /\bdick(head|heads|s)?\b/i,
+      /\bprick(s)?\b/i,
+      /\bpussy\b/i,
+      /\bwhore(s|d)?\b/i,
+      /\bslut(s|ty|tier|tiest)?\b/i,
+      /\btwat(s)?\b/i,
+      /\bwanker(s)?\b/i,
+      /\bcock(s|sucker|suckers)?\b/i,
+      /\bbastard(s)?\b/i,
+      /\basshole(s)?\b/i,
+      /\bdumbass(es)?\b/i,
+      /\bjackass(es)?\b/i,
+      /\bdouche(bag|bags)?\b/i,
+      /\b(damn|damned|damnit|dammit|goddamn|goddamnit|goddammit)\b/i,
+      /\bpiss(es|ed|ing)?\b/i,
+      /\bcrap(py|ped|ping)?\b/i,
+    ],
+  },
 ];
 
 export function runLocalModeration(input: string): LocalModerationResult {
@@ -323,6 +360,8 @@ const SUGGESTIONS: Record<string, string> = {
     'If you need international HR, immigration compliance, or labour law support, describe the specific professional service you need (e.g. "immigration solicitor," "global mobility consultant").',
   violence_threats:
     'If you have a legitimate dispute or safety concern, consider consulting a legal professional about proper dispute resolution, mediation services, or contacting the relevant authorities.',
+  profanity:
+    'MyKonnect is a verified professional network. Please rephrase your shout-out without profanity or inappropriate language.',
 };
 
 export function getSuggestion(category: string): string {

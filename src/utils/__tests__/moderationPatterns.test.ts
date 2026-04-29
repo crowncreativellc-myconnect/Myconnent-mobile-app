@@ -32,3 +32,54 @@ describe('runLocalModeration — drug services', () => {
     },
   );
 });
+
+describe('runLocalModeration — sexual exploitation solicitation', () => {
+  it.each([
+    'I need hoes',
+    'I need a pimp',
+    'looking for some hoes',
+    'find me a hoe',
+    'get me a pimp',
+    'gimme some hoes',
+    'pimping out girls',
+    'pimping women for money',
+  ])('blocks solicitation phrase: %s', (input) => {
+    const result = runLocalModeration(normaliseInput(input));
+    expect(result.passed).toBe(false);
+    expect(result.category).toBe('sexual_exploitation');
+  });
+});
+
+describe('runLocalModeration — profanity', () => {
+  it.each([
+    'this is fucking ridiculous',
+    'what a bitch',
+    'shit happens',
+    'you asshole',
+    'goddamn it',
+    'piss off',
+    'bullshit deadline',
+    'crappy code',
+    'damn that hurts',
+    'motherfucker',
+  ])('blocks profanity: %s', (input) => {
+    const result = runLocalModeration(normaliseInput(input));
+    expect(result.passed).toBe(false);
+    expect(result.category).toBe('profanity');
+  });
+
+  it.each([
+    'class action lawsuit',
+    'passport renewal help',
+    'compass design review',
+    'Hello there, need a designer',
+    'shellfish allergy compliance',
+    'cocktail party planner',
+    'peacock graphic illustrator',
+    'Michelle from accounting',
+    'embassy visa appointment',
+  ])('does not false-positive on benign substring: %s', (input) => {
+    const result = runLocalModeration(normaliseInput(input));
+    expect(result.passed).toBe(true);
+  });
+});
