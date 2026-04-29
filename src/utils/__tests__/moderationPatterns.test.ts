@@ -50,6 +50,42 @@ describe('runLocalModeration — sexual exploitation solicitation', () => {
   });
 });
 
+describe('runLocalModeration — violence (hitman / contract killer)', () => {
+  it.each([
+    'I need a hitman',
+    'I need a hit man',
+    'looking for a hitman',
+    'find me a hit man',
+    'I need a contract killer',
+    'looking for a hired killer',
+    'killer for hire',
+    'gun for hire',
+    'I want to hire an assassin',
+    'find me an assassin',
+    'I need someone to kill my ex',
+    'hire someone to murder him',
+    'find someone to whack her',
+  ])('blocks contract-violence phrase: %s', (input) => {
+    const result = runLocalModeration(normaliseInput(input));
+    expect(result.passed).toBe(false);
+    expect(result.category).toBe('violence_threats');
+  });
+
+  it.each([
+    'killer feature for the dashboard',
+    'I want a killer designer',
+    'killer presentation deck',
+    'hit the gym at 6am',
+    'find someone to take out the trash',
+    'need someone to handle the deck',
+    'looking for a security professional',
+    'took a stab at it',
+  ])('does not false-positive on benign phrasing: %s', (input) => {
+    const result = runLocalModeration(normaliseInput(input));
+    expect(result.passed).toBe(true);
+  });
+});
+
 describe('runLocalModeration — profanity', () => {
   it.each([
     'this is fucking ridiculous',

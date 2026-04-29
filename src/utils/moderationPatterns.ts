@@ -267,6 +267,16 @@ const PROHIBITED_CATEGORIES: PatternCategory[] = [
       /\b(slide\s*on|run\s*up\s*on|spin\s*the\s*block|pull\s*up\s*on|catch\s*(him|her|them)\s*slipping)\b/i,
       // Contract violence
       /\b(hire|pay|find\s*someone|need\s*someone)\b.{0,25}\b(to\s*)?(beat\s*(up|down)|rough\s*up|hurt|assault|attack|jump)\b.{0,25}\b(him|her|them|someone|a\s*person)\b/i,
+      // Hitman / contract-killer vocabulary (zero ambiguity, even standalone)
+      /\bhit\s*m[ae]n\b/i,
+      /\b(contract\s*killer|hired\s*killer|paid\s*killer|paid\s*assassin|gun\s*for\s*hire|leg\s*breaker|knee\s*capper)\b/i,
+      /\b(killer|murderer|assassin)\s+for\s+hire\b/i,
+      // Solicitation framing for assassin/murderer/enforcer/goon
+      // ("killer" is excluded — too many benign uses, e.g. "killer designer")
+      /\b(need|want|hire|find\s*me|looking\s*for|get\s*me|connect\s*me|know\s*(a|of\s*a))\b.{0,15}\b(a\s+|an\s+|some\s+|the\s+)?(assassin|murderer|enforcer|goon)\b/i,
+      // Hire / find / need someone to kill / murder / whack a person
+      // (target list deliberately person-specific so "take out the trash" doesn't trip it)
+      /\b(hire|pay|find\s*someone|need\s*someone|need\s*a\s*guy|looking\s*for\s*someone)\b.{0,25}\b(to\s+)?(kill|murder|whack|take\s*out|eliminate|do\s*away\s*with|get\s*rid\s*of|knock\s*off)\b.{0,25}\b(him|her|them|someone|a\s*person|my\s*ex|this\s*(person|guy|girl)|that\s*(person|guy|girl))\b/i,
       // Doxxing
       /\b(dox(x)?(ing)?|d0x(x)?(ing)?)\b/i,
       /\b(find|post|publish|share)\b.{0,25}\b(home\s*address|personal\s*details|private\s*info(rmation)?|phone\s*number)\b.{0,25}\b(of|for|about)\b.{0,20}\b(him|her|them|this\s*(person|guy|girl)|my\s*ex)\b/i,
