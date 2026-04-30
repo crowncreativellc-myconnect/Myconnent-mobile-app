@@ -54,6 +54,13 @@
           "color": "#4F6EF7",
           "sounds": []
         }
+      ],
+      [
+        "@stripe/stripe-react-native",
+        {
+          "merchantIdentifier": "merchant.app.mykonnect",
+          "enableGooglePay": true
+        }
       ]
     ],
     "scheme": "myconnect",

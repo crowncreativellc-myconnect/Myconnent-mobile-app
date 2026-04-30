@@ -7,9 +7,21 @@ interface ChatInputProps {
   isScreening: boolean;
   isLocked: boolean;
   onMarkComplete: () => void;
+  // Payment integration — provider-only "$" button.
+  showPaymentButton?: boolean;
+  onOpenPaymentComposer?: () => void;
+  hideTextInput?: boolean;
 }
 
-export function ChatInput({ onSend, isScreening, isLocked, onMarkComplete }: ChatInputProps) {
+export function ChatInput({
+  onSend,
+  isScreening,
+  isLocked,
+  onMarkComplete,
+  showPaymentButton = false,
+  onOpenPaymentComposer,
+  hideTextInput = false,
+}: ChatInputProps) {
   const { colors } = useTheme();
   const [text, setText] = useState('');
 
@@ -33,7 +45,7 @@ export function ChatInput({ onSend, isScreening, isLocked, onMarkComplete }: Cha
 
   const canSend = text.trim().length > 0 && !isScreening && !isLocked;
 
-  if (isLocked) {
+  if (isLocked || hideTextInput) {
     return (
       <View
         style={{
@@ -46,7 +58,7 @@ export function ChatInput({ onSend, isScreening, isLocked, onMarkComplete }: Cha
         }}
       >
         <Text style={{ color: colors.textMuted, fontSize: 14, fontStyle: 'italic' }}>
-          This chat has been closed.
+          {isLocked ? 'This chat has been closed.' : 'Messaging unavailable.'}
         </Text>
       </View>
     );
@@ -95,6 +107,25 @@ export function ChatInput({ onSend, isScreening, isLocked, onMarkComplete }: Cha
           gap: 8,
         }}
       >
+        {showPaymentButton && onOpenPaymentComposer && (
+          <TouchableOpacity
+            onPress={onOpenPaymentComposer}
+            accessibilityLabel="Request payment"
+            style={{
+              width: 42,
+              height: 42,
+              borderRadius: 21,
+              borderWidth: 1.5,
+              borderColor: '#F6C90E',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: 2,
+            }}
+          >
+            <Text style={{ color: '#F6C90E', fontFamily: 'Inter-Bold', fontSize: 18 }}>$</Text>
+          </TouchableOpacity>
+        )}
+
         <View
           style={{
             flex: 1,

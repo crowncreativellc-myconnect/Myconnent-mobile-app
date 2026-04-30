@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Switch, Alert } from 'react-native';
-import { router } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, Switch, Alert, Linking } from 'react-native';
+import { router, type Href } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card } from '../../src/components/Card';
 import { Avatar } from '../../src/components/Avatar';
 import { useSession } from '../../src/hooks/useSession';
 import { useAuth } from '../../src/hooks/useAuth';
 import { useTheme } from '../../src/hooks/useTheme';
+import { usePayments } from '../../src/hooks/usePayments';
 import { supabase } from '../../src/lib/supabase';
 import type { ThemeColors } from '../../src/theme';
 
@@ -51,6 +52,7 @@ export default function SettingsScreen() {
   const { profile } = useSession();
   const { signOut } = useAuth();
   const { colors } = useTheme();
+  const { checkProviderOnboarding, startProviderOnboarding } = usePayments();
   const [notifications, setNotifications] = useState({
     shoutMatched: true,
     shoutAccepted: true,
@@ -59,6 +61,32 @@ export default function SettingsScreen() {
     pointsEarned: false,
     digest: true,
   });
+  const [paymentsConnected, setPaymentsConnected] = useState(false);
+
+  useEffect(() => {
+    if (!profile?.id) return;
+    checkProviderOnboarding(profile.id).then((res) => {
+      if (res.data) setPaymentsConnected(res.data.onboardingComplete);
+    });
+  }, [profile?.id, checkProviderOnboarding]);
+
+  const handlePaymentAccount = async () => {
+    if (paymentsConnected) {
+      Alert.alert(
+        'Payments connected',
+        'Your Stripe account is connected and ready to receive payments.',
+      );
+      return;
+    }
+    const result = await startProviderOnboarding();
+    if (result.error) Alert.alert('Onboarding error', result.error.message);
+  };
+
+  const handlePayoutSettings = () => {
+    Linking.openURL('https://connect.stripe.com/express_login').catch(() => {
+      Alert.alert('Could not open', 'Unable to open the Stripe Express dashboard.');
+    });
+  };
 
   const handleSignOut = () => {
     Alert.alert(
@@ -168,6 +196,43 @@ export default function SettingsScreen() {
             <SettingRow colors={colors} label="Change Email" onPress={handleChangeEmail} />
             <SettingRow colors={colors} label="Change Password" onPress={handleChangePassword} />
             <SettingRow colors={colors} label="Subscription" value={profile?.is_premium ? 'Premium' : 'Free'} onPress={() => {}} />
+          </Card>
+        </View>
+
+        {/* Payments */}
+        <View style={{ paddingHorizontal: 20, marginBottom: 20 }}>
+          <SectionLabel title="Payments" />
+          <Card variant="bordered">
+            <SettingRow
+              colors={colors}
+              label="Payment account"
+              value={paymentsConnected ? undefined : 'Set up'}
+              onPress={handlePaymentAccount}
+              rightElement={
+                paymentsConnected ? (
+                  <Text
+                    style={{
+                      color: '#10B981',
+                      fontFamily: 'Inter-SemiBold',
+                      fontSize: 14,
+                      marginRight: 8,
+                    }}
+                  >
+                    Connected ✓
+                  </Text>
+                ) : undefined
+              }
+            />
+            <SettingRow
+              colors={colors}
+              label="Payment history"
+              onPress={() => router.push('/(app)/payment-history' as Href)}
+            />
+            <SettingRow
+              colors={colors}
+              label="Payout settings"
+              onPress={handlePayoutSettings}
+            />
           </Card>
         </View>
 

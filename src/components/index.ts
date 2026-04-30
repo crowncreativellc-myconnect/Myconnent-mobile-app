@@ -14,5 +14,7 @@ export { TabIcon, HomeIcon, CircleIcon, ChatsIcon, PointsIcon as TabPointsIcon, 
 export { ChatBubble } from './ChatBubble';
 export { ChatInput } from './ChatInput';
 export { ReportModal } from './ReportModal';
+export { PaymentProposalCard } from './PaymentProposalCard';
+export { PaymentProposalComposer } from './PaymentProposalComposer';
 export { ShoutIcon } from './ShoutIcon';
 export { PointsIcon, CompleteJobIcon, StrongReviewIcon, ReferralIcon, FastResponseIcon, MonthlyStreakIcon } from './PointsIcons';

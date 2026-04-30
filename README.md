@@ -193,6 +193,112 @@ During development, add test users at **Roles → Test Users**.
 
 ---
 
+## Stripe Integration
+
+MyKonnect uses **Stripe Connect (Express)** to handle in-chat payments between clients and providers. The platform takes an **8% application fee**, the provider receives 92%, and points/reviews are awarded only after the payment succeeds.
+
+### 1. Create your Stripe platform account
+
+1. Sign up at [dashboard.stripe.com](https://dashboard.stripe.com).
+2. Activate the account in **Test mode** first — keep all live keys out of `.env` until you're ready to go live.
+3. From **Developers → API keys**, copy:
+   - **Publishable key** → `EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY` (safe to ship in the app)
+   - **Secret key** → `STRIPE_SECRET_KEY` (Edge Function secret only — never put in client)
+4. From **Settings → Account**, copy your account ID into `STRIPE_PLATFORM_ACCOUNT_ID`.
+
+### 2. Enable Connect
+
+1. **Connect → Get started** in the Stripe dashboard.
+2. Choose **Platform or marketplace**.
+3. Pick **Express** as your default account type — this is what `stripe-connect-onboard` creates for providers.
+4. Configure your platform branding (name, logo, support email).
+
+### 3. Configure your webhook
+
+1. **Developers → Webhooks → Add endpoint**.
+2. Endpoint URL:
+   `https://YOUR_PROJECT_REF.functions.supabase.co/stripe-webhook`
+3. Register these events (and only these):
+   - `payment_intent.succeeded`
+   - `payment_intent.payment_failed`
+   - `account.updated`
+   - `charge.dispute.created`
+4. After saving, copy the **Signing secret** into `STRIPE_WEBHOOK_SECRET`.
+
+### 4. Deploy the Edge Functions
+
+```bash
+# One-time: store secrets in Supabase (replaces values in .env for prod)
+supabase secrets set \
+  STRIPE_SECRET_KEY=sk_live_xxx \
+  STRIPE_WEBHOOK_SECRET=whsec_xxx \
+  STRIPE_PLATFORM_ACCOUNT_ID=acct_xxx \
+  STRIPE_SERVICE_FEE_PERCENT=0.08
+
+# Deploy the three Stripe Edge Functions
+supabase functions deploy create-payment-intent
+supabase functions deploy stripe-connect-onboard
+# IMPORTANT: stripe-webhook must skip JWT auth so Stripe can reach it
+supabase functions deploy stripe-webhook --no-verify-jwt
+```
+
+### 5. Run the migration
+
+```bash
+# Apply the new payments schema
+supabase db push   # or paste supabase/migrations/20250007_add_stripe_payments.sql
+                   # into the SQL editor
+```
+
+This creates:
+- `payment_proposals` and `stripe_connect_accounts` tables (with RLS)
+- The `calculate_mykonnect_fee(amount_cents)` function — **the single source of truth** for the 8% split, using `FLOOR` so service fee + provider receives always equals the gross amount with no penny drift.
+- The `on_payment_proposal_paid` trigger that updates the chat, awards points, and posts the system message — only the first time, idempotent via the `points_awarded` flag.
+
+### 6. How the 8% application fee flows
+
+```
+Client pays $100 (full gross amount)
+     │
+     ▼
+Stripe PaymentIntent
+  amount = 10000          (cents)
+  application_fee_amount  = 800   ← MyKonnect's 8%
+  transfer_data.destination = acct_xxx ← provider's Connect account
+     │
+     ▼
+On success:
+  ├─ Stripe transfers $92.00 to provider's connected account
+  ├─ Stripe routes $8.00 application fee to MyKonnect's platform account
+  └─ Webhook flips proposal → 'paid' → trigger awards points + locks job
+```
+
+The fee is **always taken from the gross amount**. The client pays the price the provider quoted; MyKonnect never charges the client extra on top.
+
+### 7. Test mode vs live mode
+
+| Environment | Publishable | Secret | Webhook secret |
+|-------------|-------------|--------|----------------|
+| Development / staging | `pk_test_…` | `sk_test_…` | `whsec_…` (test endpoint) |
+| Production | `pk_live_…` | `sk_live_…` | `whsec_…` (live endpoint) |
+
+Use Stripe's test card `4242 4242 4242 4242` (any future expiry, any CVC) to validate the full flow end-to-end before flipping to live keys.
+
+### 8. Required app config
+
+`app.json` registers the Stripe React Native plugin so the Apple Pay / Google Pay native modules link correctly:
+
+```json
+["@stripe/stripe-react-native", {
+  "merchantIdentifier": "merchant.app.mykonnect",
+  "enableGooglePay": true
+}]
+```
+
+After updating `app.json`, run `npx expo prebuild --clean` (or `eas build`) so the native projects pick up the merchant identifier on iOS and the Google Pay metadata on Android.
+
+---
+
 ## Supabase Setup
 
 ### 1. Create a new Supabase project

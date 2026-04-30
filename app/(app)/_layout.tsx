@@ -144,6 +144,7 @@ export default function AppLayout() {
       <Tabs.Screen name="shout-detail" options={{ href: null }} />
       <Tabs.Screen name="profile-edit" options={{ href: null }} />
       <Tabs.Screen name="connection-detail" options={{ href: null }} />
+      <Tabs.Screen name="payment-history" options={{ href: null }} />
     </Tabs>
   );
 }
