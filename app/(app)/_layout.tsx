@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
-import { Tabs, router } from 'expo-router';
+import { Tabs, router, usePathname, type Href } from 'expo-router';
 import { useSession } from '../../src/hooks';
 import { usePushNotifications } from '../../src/hooks/usePushNotifications';
 import { TabIcon, ChatsIcon } from '../../src/components/TabIcons';
@@ -28,6 +28,7 @@ export default function AppLayout() {
   const { isAuthenticated, isInitialized, profile } = useSession();
   const { colors } = useTheme();
   const [hasUnread, setHasUnread] = useState(false);
+  const pathname = usePathname();
   usePushNotifications();
 
   useEffect(() => {
@@ -35,6 +36,16 @@ export default function AppLayout() {
       router.replace('/(auth)/login');
     }
   }, [isAuthenticated, isInitialized]);
+
+  // First-run contact-import gate: profile.contacts_onboarded is false for
+  // users who haven't seen (or skipped) the onboarding screen yet.
+  useEffect(() => {
+    if (!isInitialized || !isAuthenticated || !profile) return;
+    const hasOnboarded = profile.contacts_onboarded ?? false;
+    if (!hasOnboarded && pathname !== '/onboarding-contacts') {
+      router.replace('/(app)/onboarding-contacts' as Href);
+    }
+  }, [isInitialized, isAuthenticated, profile, pathname]);
 
   // Live unread message count via Realtime
   useEffect(() => {
@@ -145,6 +156,7 @@ export default function AppLayout() {
       <Tabs.Screen name="profile-edit" options={{ href: null }} />
       <Tabs.Screen name="connection-detail" options={{ href: null }} />
       <Tabs.Screen name="payment-history" options={{ href: null }} />
+      <Tabs.Screen name="onboarding-contacts" options={{ href: null }} />
     </Tabs>
   );
 }

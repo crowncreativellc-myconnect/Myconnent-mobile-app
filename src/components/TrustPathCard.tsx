@@ -15,8 +15,9 @@ function ordinal(n: number): string {
 }
 
 export function TrustPathCard({ match }: TrustPathCardProps) {
-  const { bridge_contact, recommended_user, final_score, degree } = match;
+  const { bridge_contact, recommended_user, final_score, degree, ghost_bridge_count } = match;
   const degreeLabel = ordinal(degree ?? 2);
+  const isGhostBridge = !!ghost_bridge_count && ghost_bridge_count > 0;
 
   return (
     <View className="mt-3 bg-brand-primary/8 border border-brand-primary/20 rounded-2xl px-4 py-3">
@@ -24,7 +25,7 @@ export function TrustPathCard({ match }: TrustPathCardProps) {
       <View className="flex-row items-center mb-3">
         <View className="w-1.5 h-1.5 rounded-full bg-brand-primary mr-2" />
         <Text className="text-brand-primary text-xs font-semibold uppercase tracking-wide">
-          {degreeLabel}-degree match · via your circle
+          {degreeLabel}-degree match · {isGhostBridge ? 'via shared contacts' : 'via your circle'}
         </Text>
         <View className="ml-auto bg-brand-primary/15 rounded-full px-2 py-0.5">
           <Text className="text-brand-primary text-xs font-bold">
@@ -48,20 +49,33 @@ export function TrustPathCard({ match }: TrustPathCardProps) {
           <Text className="text-brand-primary/60 text-xs mx-0.5">›</Text>
         </View>
 
-        {/* Bridge contact */}
-        <View className="items-center">
-          <Avatar
-            name={bridge_contact.full_name}
-            avatarUrl={bridge_contact.avatar_url}
-            trustTier={bridge_contact.trust_tier}
-            size="sm"
-            showTierRing
-          />
-          <Text className="text-text-muted text-xs mt-1 max-w-[56px] text-center" numberOfLines={1}>
-            {bridge_contact.full_name.split(' ')[0]}
-          </Text>
-          <TrustBadge tier={bridge_contact.trust_tier} size="sm" />
-        </View>
+        {/* Bridge — real member OR ghost bridge */}
+        {isGhostBridge ? (
+          <View className="items-center">
+            <View className="w-8 h-8 rounded-full bg-surface-elevated border border-dashed border-brand-primary/40 items-center justify-center">
+              <Text className="text-brand-primary text-xs font-bold">
+                {ghost_bridge_count}
+              </Text>
+            </View>
+            <Text className="text-text-muted text-[10px] mt-1 max-w-[64px] text-center" numberOfLines={2}>
+              shared {ghost_bridge_count === 1 ? 'contact' : 'contacts'}
+            </Text>
+          </View>
+        ) : bridge_contact ? (
+          <View className="items-center">
+            <Avatar
+              name={bridge_contact.full_name}
+              avatarUrl={bridge_contact.avatar_url}
+              trustTier={bridge_contact.trust_tier}
+              size="sm"
+              showTierRing
+            />
+            <Text className="text-text-muted text-xs mt-1 max-w-[56px] text-center" numberOfLines={1}>
+              {bridge_contact.full_name.split(' ')[0]}
+            </Text>
+            <TrustBadge tier={bridge_contact.trust_tier} size="sm" />
+          </View>
+        ) : null}
 
         {/* Arrow */}
         <View className="flex-1 flex-row items-center mx-1">
@@ -87,12 +101,24 @@ export function TrustPathCard({ match }: TrustPathCardProps) {
 
       {/* Caption */}
       <Text className="text-text-muted text-xs mt-3 leading-relaxed">
-        <Text className="text-text-secondary font-medium">{bridge_contact.full_name}</Text>
-        {(degree ?? 2) === 2 ? ' knows ' : ' is connected to '}
-        {(degree ?? 2) > 2 && <Text>someone who knows </Text>}
-        {(degree ?? 2) > 3 && <Text>someone who knows </Text>}
-        {(degree ?? 2) > 4 && <Text>someone who knows </Text>}
-        <Text className="text-text-secondary font-medium">{recommended_user.full_name}</Text>
+        {isGhostBridge ? (
+          <>
+            <Text className="text-text-secondary font-medium">
+              {ghost_bridge_count} shared {ghost_bridge_count === 1 ? 'contact' : 'contacts'}
+            </Text>
+            <Text> silently bridge you to </Text>
+            <Text className="text-text-secondary font-medium">{recommended_user.full_name}</Text>
+          </>
+        ) : bridge_contact ? (
+          <>
+            <Text className="text-text-secondary font-medium">{bridge_contact.full_name}</Text>
+            {(degree ?? 2) === 2 ? ' knows ' : ' is connected to '}
+            {(degree ?? 2) > 2 && <Text>someone who knows </Text>}
+            {(degree ?? 2) > 3 && <Text>someone who knows </Text>}
+            {(degree ?? 2) > 4 && <Text>someone who knows </Text>}
+            <Text className="text-text-secondary font-medium">{recommended_user.full_name}</Text>
+          </>
+        ) : null}
         {recommended_user.trust_score != null && (
           <Text> · Trust score {recommended_user.trust_score}/100</Text>
         )}

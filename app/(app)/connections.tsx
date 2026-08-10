@@ -166,10 +166,12 @@ function InviteModal({
   visible,
   onClose,
   inviterName,
+  inviteCode,
 }: {
   visible: boolean;
   onClose: () => void;
   inviterName: string;
+  inviteCode: string | null;
 }) {
   const [email, setEmail] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -179,13 +181,17 @@ function InviteModal({
   const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 
   const handleSend = async () => {
-    if (!isValidEmail) return;
+    if (!isValidEmail || !inviteCode) return;
     setIsSending(true);
     try {
-      const inviteLink = `https://myconnect.app/join?ref=${encodeURIComponent(inviterName)}`;
+      const inviteLink = `https://myconnect.app/join?ref=${inviteCode}`;
       await Share.share({
-        message: `${inviterName} invited you to join MyConnect — the professional trust network where every connection is vouched for.\n\nJoin here: ${inviteLink}`,
-        title: `${inviterName} invited you to MyConnect`,
+        message:
+          `${inviterName} invited you to join MyKonnect — the professional trust network where every connection is vouched for.\n\n` +
+          `Sign up here: ${inviteLink}\n\n` +
+          `When asked for an invite code, paste: ${inviteCode}\n\n` +
+          `You'll auto-connect to ${inviterName} and both earn +30 Konnect Points.`,
+        title: `${inviterName} invited you to MyKonnect`,
       });
       setSent(true);
     } catch {
@@ -231,9 +237,29 @@ function InviteModal({
               <Text style={{ color: colors.textPrimary, fontSize: 20, fontFamily: 'Inter-Bold', marginBottom: 8 }}>
                 Invite a Trusted Connection
               </Text>
-              <Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20, marginBottom: 24 }}>
-                Only invite people you've personally worked with or can genuinely vouch for.
+              <Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20, marginBottom: 16 }}>
+                Only invite people you've personally worked with or can genuinely vouch for. When they sign up with your code, you're auto-connected as a 1st-degree trusted pair.
               </Text>
+              {inviteCode && (
+                <View
+                  style={{
+                    backgroundColor: 'rgba(79,110,247,0.08)',
+                    borderWidth: 1,
+                    borderColor: 'rgba(79,110,247,0.25)',
+                    borderRadius: 12,
+                    paddingHorizontal: 14,
+                    paddingVertical: 10,
+                    marginBottom: 20,
+                  }}
+                >
+                  <Text style={{ color: colors.textMuted, fontSize: 11, fontFamily: 'Inter-SemiBold', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>
+                    Your invite code
+                  </Text>
+                  <Text style={{ color: '#4F6EF7', fontSize: 22, fontFamily: 'Inter-Bold', letterSpacing: 3 }}>
+                    {inviteCode}
+                  </Text>
+                </View>
+              )}
               <Text style={{ color: colors.textMuted, fontSize: 11, fontFamily: 'Inter-SemiBold', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>
                 Their email address
               </Text>
@@ -263,7 +289,7 @@ function InviteModal({
                 isLoading={isSending}
                 fullWidth
                 size="lg"
-                disabled={!isValidEmail}
+                disabled={!isValidEmail || !inviteCode}
               />
               <Button label="Cancel" onPress={handleClose} variant="ghost" fullWidth size="md" className="mt-2" />
             </>
@@ -455,6 +481,7 @@ export default function ConnectionsScreen() {
         visible={inviteVisible}
         onClose={() => setInviteVisible(false)}
         inviterName={profile?.full_name ?? 'Someone'}
+        inviteCode={profile?.invite_code ?? null}
       />
     </SafeAreaView>
   );

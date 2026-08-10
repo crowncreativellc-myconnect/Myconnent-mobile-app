@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { db, invokeEdgeFunction } from '../lib/supabase';
+import { db, invokeEdgeFunction, supabase } from '../lib/supabase';
 import { useShoutStore } from '../store/shoutStore';
 import { useSession } from './useSession';
 import { getMaxDegreeForUser } from '../lib/degreeMatching';
@@ -185,7 +185,7 @@ export function useShouts() {
           (id) => candidateById.get(id)?.skill_tags ?? [],
         );
 
-        return shouts.map((shout) => {
+        const enriched: ShoutOut[] = shouts.map((shout) => {
           if (shout.author_id === userId) return shout;
           if (shout.matched_user_ids.includes(userId)) return shout;
 
@@ -225,6 +225,65 @@ export function useShouts() {
 
           if (!bestMatch) return shout;
           return { ...shout, second_degree_match: bestMatch };
+        });
+
+        // ── Step 5: Ghost-bridge fallback via shared hashed contacts ─────────
+        // For any shout that still lacks a second_degree_match, see whether the
+        // viewer shares hashed contacts with the author. If so, silently bridge
+        // them at degree=2 with a null bridge_contact + ghost_bridge_count.
+        const shoutsNeedingFallback = enriched.filter(
+          (s) => !s.second_degree_match && s.author_id !== userId,
+        );
+        if (shoutsNeedingFallback.length === 0) return enriched;
+
+        const { data: bridgeRows } = await supabase.rpc('get_contact_bridged_users', {
+          start_user_id: userId,
+        });
+        const ghostCountByUserId = new Map<string, number>();
+        for (const row of (bridgeRows ?? []) as { profile_id: string; shared_count: number }[]) {
+          ghostCountByUserId.set(row.profile_id, row.shared_count);
+        }
+        if (ghostCountByUserId.size === 0) return enriched;
+
+        // Fetch the bridged users' profiles so we can score skill overlap.
+        const missingIds = Array.from(ghostCountByUserId.keys()).filter(
+          (id) => !candidateById.has(id),
+        );
+        const bridgedProfiles = new Map<string, UserProfile>();
+        if (missingIds.length > 0) {
+          const { data: fetched } = await db.profiles().select('*').in('id', missingIds);
+          for (const p of (fetched as UserProfile[] | null) ?? []) {
+            bridgedProfiles.set(p.id, p);
+          }
+        }
+        for (const [id, cprofile] of candidateById) {
+          if (ghostCountByUserId.has(id)) bridgedProfiles.set(id, cprofile);
+        }
+
+        return enriched.map((shout) => {
+          if (shout.second_degree_match || shout.author_id === userId) return shout;
+          const sharedCount = ghostCountByUserId.get(shout.author_id);
+          if (!sharedCount) return shout;
+          const bridged = bridgedProfiles.get(shout.author_id);
+          if (!bridged) return shout;
+
+          const overlap = shout.skill_tags.filter((t) => bridged.skill_tags?.includes(t));
+          if (overlap.length === 0) return shout;
+          const overlapRatio = overlap.length / Math.max(shout.skill_tags.length, 1);
+          // Ghost bridges are treated as 2nd-degree with a modest bridge weight;
+          // strength scales with count of shared contacts, capped at 3.
+          const bridgeWeight = Math.min(0.4 + 0.15 * Math.min(sharedCount, 3), 0.85);
+          const finalScore = Math.min(1, overlapRatio * DEGREE_WEIGHTS[2] * bridgeWeight);
+
+          const ghostMatch: SecondDegreeMatch = {
+            recommended_user: bridged,
+            bridge_contact: null,
+            final_score: finalScore,
+            degree: 2,
+            is_second_degree: true,
+            ghost_bridge_count: sharedCount,
+          };
+          return { ...shout, second_degree_match: ghostMatch };
         });
       } catch {
         // Enrichment is best-effort — never break the feed

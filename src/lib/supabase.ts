@@ -30,6 +30,7 @@ export const db = {
   reviews: () => supabase.from('reviews'),
   points_ledger: () => supabase.from('points_ledger'),
   notifications: () => supabase.from('notifications'),
+  hashed_contacts: () => supabase.from('hashed_contacts'),
 } as const;
 
 // ─── Storage Helpers ──────────────────────────────────────────────────────────

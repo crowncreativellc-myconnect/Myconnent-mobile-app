@@ -104,19 +104,29 @@ export function useAuth() {
   );
 
   // ─── Sign Up ────────────────────────────────────────────────────────────────
+  // Optional `inviteCode` is forwarded to the DB trigger as `invited_by_code`
+  // in raw_user_meta_data. The trigger looks it up, auto-connects inviter and
+  // invitee, and credits the inviter with +30 referral points.
   const signUp = useCallback(
     async (
       email: string,
       password: string,
       fullName: string,
+      inviteCode?: string,
     ): Promise<ApiResult<Session>> => {
       setLoading(true);
       try {
+        const metadata: Record<string, string> = { full_name: fullName };
+        const normalizedCode = inviteCode?.trim().toUpperCase();
+        if (normalizedCode) {
+          metadata.invited_by_code = normalizedCode;
+        }
+
         const { data, error } = await supabase.auth.signUp({
           email: email.trim().toLowerCase(),
           password,
           options: {
-            data: { full_name: fullName },
+            data: metadata,
           },
         });
 

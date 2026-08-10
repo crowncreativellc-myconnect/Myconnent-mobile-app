@@ -21,6 +21,7 @@ interface FormState {
   email: string;
   password: string;
   confirmPassword: string;
+  inviteCode: string;
 }
 
 interface FormErrors {
@@ -28,6 +29,7 @@ interface FormErrors {
   email?: string;
   password?: string;
   confirmPassword?: string;
+  inviteCode?: string;
   general?: string;
 }
 
@@ -63,11 +65,13 @@ export default function RegisterScreen() {
     email: '',
     password: '',
     confirmPassword: '',
+    inviteCode: '',
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [showPassword, setShowPassword] = useState(false);
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [confirmationEmail, setConfirmationEmail] = useState<string | null>(null);
+  const [showInviteCode, setShowInviteCode] = useState(false);
 
   const validate = (): boolean => {
     const newErrors: FormErrors = {};
@@ -83,6 +87,10 @@ export default function RegisterScreen() {
     if (form.password !== form.confirmPassword) {
       newErrors.confirmPassword = 'Passwords do not match';
     }
+    const trimmedCode = form.inviteCode.trim();
+    if (trimmedCode && !/^[A-Z2-9]{8}$/i.test(trimmedCode)) {
+      newErrors.inviteCode = '8 letters/numbers, e.g. K7HXPMQ3';
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -96,7 +104,12 @@ export default function RegisterScreen() {
   const handleSignUp = async () => {
     if (!validate()) return;
     setErrors({});
-    const result = await signUp(form.email, form.password, form.fullName.trim());
+    const result = await signUp(
+      form.email,
+      form.password,
+      form.fullName.trim(),
+      form.inviteCode.trim() || undefined,
+    );
     if (result.error) {
       setErrors({ general: result.error.message });
     } else if (!result.data) {
@@ -248,6 +261,28 @@ export default function RegisterScreen() {
                   secureTextEntry={!showPassword}
                   error={errors.confirmPassword}
                 />
+              </View>
+
+              {/* Invite code (optional) */}
+              <View style={{ marginTop: 16 }}>
+                {!showInviteCode ? (
+                  <TouchableOpacity onPress={() => setShowInviteCode(true)} activeOpacity={0.7}>
+                    <Text style={{ color: '#4F6EF7', fontSize: 14, fontFamily: 'Inter-Medium' }}>
+                      Have an invite code? Add it
+                    </Text>
+                  </TouchableOpacity>
+                ) : (
+                  <Input
+                    label="Invite Code (optional)"
+                    value={form.inviteCode}
+                    onChangeText={(v) => setForm((f) => ({ ...f, inviteCode: v.toUpperCase() }))}
+                    placeholder="K7HXPMQ3"
+                    autoCapitalize="characters"
+                    autoCorrect={false}
+                    maxLength={8}
+                    error={errors.inviteCode}
+                  />
+                )}
               </View>
 
               {/* Skill selection */}

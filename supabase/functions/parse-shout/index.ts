@@ -41,6 +41,10 @@ interface MatchPreview {
   trust_path: TrustPathHop[];
   final_score: number;
   skill_overlap: string[];
+  // Set when the match is bridged silently via shared hashed contacts rather
+  // than a walkable connections path. The client renders "N shared contacts"
+  // instead of a member name for the bridge hop.
+  ghost_bridge_count?: number;
 }
 
 interface ParseResponse {
@@ -245,9 +249,17 @@ async function findMatchesForShout(
     deeperCandidates = await walkAndScore(supa, authorId, skillTags, maxDegree);
   }
 
+  // ── Phase D: ghost-bridge candidates via shared hashed contacts ────────────
+  const ghostCandidates = await ghostBridgedMatches(supa, authorId, skillTags);
+
   // Merge, dedupe by matched_user_id (keep best score), rank
   const byId = new Map<string, MatchPreview>();
-  for (const m of [...degree1Candidates, ...degree2Candidates, ...deeperCandidates]) {
+  for (const m of [
+    ...degree1Candidates,
+    ...degree2Candidates,
+    ...deeperCandidates,
+    ...ghostCandidates,
+  ]) {
     const prev = byId.get(m.matched_user_id);
     if (!prev || m.final_score > prev.final_score) {
       byId.set(m.matched_user_id, m);
@@ -257,6 +269,84 @@ async function findMatchesForShout(
   return Array.from(byId.values())
     .sort((a, b) => b.final_score - a.final_score)
     .slice(0, 3);
+}
+
+// Finds users who share hashed contacts with the author and treats them as
+// 2nd-degree matches with a synthetic ghost-bridge trust path.
+async function ghostBridgedMatches(
+  supa: ReturnType<typeof createClient>,
+  authorId: string,
+  skillTags: string[],
+): Promise<MatchPreview[]> {
+  if (skillTags.length === 0) return [];
+
+  // Service-role bypasses the SECURITY DEFINER self-check by calling the
+  // underlying join directly rather than through the RPC.
+  const { data: bridgeRows, error: bridgeErr } = await supa
+    .from('hashed_contacts')
+    .select('hash, hash_type, user_id')
+    .in('hash', ((await supa
+      .from('hashed_contacts')
+      .select('hash')
+      .eq('user_id', authorId)
+    ).data ?? []).map((r: { hash: string }) => r.hash));
+
+  if (bridgeErr || !bridgeRows) return [];
+
+  // Aggregate shared counts per other user.
+  const counts = new Map<string, number>();
+  for (const r of bridgeRows as { user_id: string }[]) {
+    if (r.user_id === authorId) continue;
+    counts.set(r.user_id, (counts.get(r.user_id) ?? 0) + 1);
+  }
+  if (counts.size === 0) return [];
+
+  const bridgedIds = Array.from(counts.keys());
+  const { data: profiles, error: profErr } = await supa
+    .from('profiles')
+    .select('id, skill_tags, full_name, trust_tier, trust_score, avatar_url')
+    .in('id', bridgedIds);
+
+  if (profErr || !profiles) return [];
+
+  const scored: MatchPreview[] = [];
+  for (const profile of profiles as {
+    id: string;
+    skill_tags: string[];
+    full_name: string;
+    trust_tier: 'Member' | 'Connector' | 'Trusted' | 'Founding';
+    trust_score: number;
+    avatar_url: string | null;
+  }[]) {
+    const overlap = skillTags.filter((t) => profile.skill_tags?.includes(t));
+    if (overlap.length === 0) continue;
+    const overlapRatio = overlap.length / Math.max(skillTags.length, 1);
+    const sharedCount = counts.get(profile.id) ?? 1;
+    // Ghost bridges: modest weight that grows with shared count, capped.
+    const bridgeWeight = Math.min(0.4 + 0.15 * Math.min(sharedCount, 3), 0.85);
+    const degreeDecay = 0.85; // 2nd-degree
+    const finalScore = Math.max(0, Math.min(1, overlapRatio * degreeDecay * bridgeWeight));
+
+    scored.push({
+      matched_user_id: profile.id,
+      degree: 2,
+      trust_path: [
+        {
+          user_id: profile.id,
+          full_name: profile.full_name,
+          trust_tier: profile.trust_tier,
+          trust_score: profile.trust_score,
+          avatar_url: profile.avatar_url,
+          degree: 2,
+        },
+      ],
+      final_score: finalScore,
+      skill_overlap: overlap,
+      ghost_bridge_count: sharedCount,
+    });
+  }
+
+  return scored;
 }
 
 // Issues the graph walk at the given target degree, then scores every unique

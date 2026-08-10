@@ -42,23 +42,104 @@ create table profiles (
   total_completions         integer not null default 0,
   status                    user_status not null default 'active',
   is_premium                boolean not null default false,
+  invite_code               text unique,
+  invited_by_id             uuid references profiles(id) on delete set null,
+  contacts_onboarded        boolean not null default false,
   joined_at                 timestamptz not null default now(),
   last_active_at            timestamptz not null default now(),
   updated_at                timestamptz not null default now()
 );
 
+create index if not exists profiles_invite_code_idx on profiles(invite_code);
+create index if not exists profiles_invited_by_idx  on profiles(invited_by_id);
+
 -- Index for fast Facebook friend cross-reference lookup
 
--- Trigger: auto-create profile on auth.users insert
-create or replace function public.handle_new_user()
-returns trigger language plpgsql security definer as $$
+-- Invite-code generator: 8-char base32-ish (no confusable chars).
+create or replace function public.generate_invite_code()
+returns text
+language plpgsql
+as $$
+declare
+  alphabet text := 'ABCDEFGHJKMNPQRSTVWXYZ23456789';
+  result   text := '';
+  i        int;
 begin
-  insert into public.profiles (id, email, full_name)
-  values (
-    new.id,
-    new.email,
-    coalesce(new.raw_user_meta_data->>'full_name', split_part(new.email, '@', 1))
-  );
+  for i in 1..8 loop
+    result := result || substr(alphabet, 1 + floor(random() * length(alphabet))::int, 1);
+  end loop;
+  return result;
+end;
+$$;
+
+-- Trigger: auto-create profile on auth.users insert. Also mints an invite_code,
+-- and if the caller passed raw_user_meta_data.invited_by_code, resolves the
+-- inviter, auto-connects them, and credits +30 referral points.
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  invite_code_input text;
+  inviter_id        uuid;
+  new_invite_code   text;
+  inviter_new_bal   integer;
+begin
+  invite_code_input := upper(nullif(trim(new.raw_user_meta_data->>'invited_by_code'), ''));
+
+  if invite_code_input is not null then
+    select id into inviter_id
+    from public.profiles
+    where invite_code = invite_code_input
+    limit 1;
+  end if;
+
+  loop
+    new_invite_code := public.generate_invite_code();
+    begin
+      insert into public.profiles (id, email, full_name, invite_code, invited_by_id)
+      values (
+        new.id,
+        new.email,
+        coalesce(new.raw_user_meta_data->>'full_name', split_part(new.email, '@', 1)),
+        new_invite_code,
+        inviter_id
+      );
+      exit;
+    exception when unique_violation then
+      if not exists (select 1 from public.profiles where id = new.id) then
+        continue;
+      else
+        raise;
+      end if;
+    end;
+  end loop;
+
+  if inviter_id is not null and inviter_id <> new.id then
+    insert into public.connections (requester_id, addressee_id, status, vouched_at)
+    values (inviter_id, new.id, 'accepted', now())
+    on conflict (requester_id, addressee_id) do nothing;
+
+    select konnect_points + 30 into inviter_new_bal
+    from public.profiles where id = inviter_id;
+
+    update public.profiles
+      set konnect_points = inviter_new_bal
+    where id = inviter_id;
+
+    insert into public.points_ledger (user_id, event_type, delta, balance_after, reference_id, description)
+    values (
+      inviter_id,
+      'referral_completion',
+      30,
+      inviter_new_bal,
+      new.id,
+      'Referral bonus — invited member joined MyKonnect'
+    );
+  end if;
+
   return new;
 end;
 $$;
@@ -322,3 +403,65 @@ $$;
 create trigger on_approval_complete
   before update on public.connection_approvals
   for each row execute function public.handle_approval_complete();
+
+-- ─── Hashed Contacts (silent 2nd-degree bridging) ────────────────────────────
+create table if not exists hashed_contacts (
+  id         uuid primary key default uuid_generate_v4(),
+  user_id    uuid not null references profiles(id) on delete cascade,
+  hash       text not null,
+  hash_type  text not null check (hash_type in ('email','phone')),
+  created_at timestamptz not null default now(),
+  unique (user_id, hash, hash_type)
+);
+
+create index if not exists hashed_contacts_hash_idx    on hashed_contacts(hash, hash_type);
+create index if not exists hashed_contacts_user_id_idx on hashed_contacts(user_id);
+
+alter table hashed_contacts enable row level security;
+
+create policy "Users read own hashed contacts"
+  on hashed_contacts for select
+  to authenticated
+  using (auth.uid() = user_id);
+
+create policy "Users insert own hashed contacts"
+  on hashed_contacts for insert
+  to authenticated
+  with check (auth.uid() = user_id);
+
+create policy "Users delete own hashed contacts"
+  on hashed_contacts for delete
+  to authenticated
+  using (auth.uid() = user_id);
+
+revoke all on hashed_contacts from anon;
+
+-- Silent 2nd-degree bridge finder: returns other users who share at least one
+-- hashed contact with the caller. SECURITY DEFINER but self-only, so callers
+-- never see the raw hashes of other users — only aggregate counts.
+create or replace function public.get_contact_bridged_users(start_user_id uuid)
+returns table (profile_id uuid, shared_count int)
+language plpgsql
+security definer
+stable
+set search_path = public
+as $$
+begin
+  if auth.uid() is null or auth.uid() <> start_user_id then
+    raise exception 'get_contact_bridged_users: caller must be the target user';
+  end if;
+
+  return query
+  select other.user_id as profile_id, count(*)::int as shared_count
+  from public.hashed_contacts mine
+  join public.hashed_contacts other
+    on other.hash = mine.hash
+   and other.hash_type = mine.hash_type
+   and other.user_id <> mine.user_id
+  where mine.user_id = start_user_id
+  group by other.user_id;
+end;
+$$;
+
+revoke all on function public.get_contact_bridged_users(uuid) from public;
+grant execute on function public.get_contact_bridged_users(uuid) to authenticated;

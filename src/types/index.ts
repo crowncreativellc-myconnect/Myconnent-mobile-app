@@ -21,6 +21,9 @@ export interface UserProfile {
   total_completions: number;
   status: UserStatus;
   is_premium: boolean;
+  invite_code?: string | null;
+  invited_by_id?: string | null;
+  contacts_onboarded?: boolean;
   joined_at: string;
   last_active_at: string;
   subscription_tier?: SubscriptionTier;
@@ -183,6 +186,11 @@ export interface TrustPathHop {
   trust_score: number;
   avatar_url: string | null;
   degree: MatchDegree;
+  // When true, this hop is a synthetic bridge through one or more shared
+  // hashed contacts (a "ghost" that never signed up). The UI should render
+  // `shared_contact_count` instead of the placeholder name/tier.
+  is_ghost_bridge?: boolean;
+  shared_contact_count?: number;
 }
 
 export interface DegreeExpansionResult {
@@ -205,10 +213,13 @@ export interface MatchScore {
 
 export interface SecondDegreeMatch {
   recommended_user: UserProfile;
-  bridge_contact: UserProfile; // your direct 1st-degree connection in the path
+  bridge_contact: UserProfile | null; // null when the bridge is a ghost (unregistered shared contact)
   final_score: number;
   degree: number; // 2–6
   is_second_degree: true;
+  // If set, the bridge is one or more unregistered contacts you both have in
+  // your address books. The UI renders "N shared contacts" instead of a member.
+  ghost_bridge_count?: number;
 }
 
 // ─── API Response Wrappers ────────────────────────────────────────────────────
