@@ -267,7 +267,7 @@ export type ChatReportReason =
   | 'solicitation'
   | 'other';
 
-export type ChatMessageType = 'text' | 'payment_proposal' | 'payment_confirmed' | 'system';
+export type ChatMessageType = 'text' | 'system';
 
 export interface ChatMessage {
   id: string;
@@ -278,8 +278,6 @@ export interface ChatMessage {
   is_system_message: boolean;
   is_flagged: boolean;
   message_type: ChatMessageType;
-  payment_proposal_id?: string | null;
-  payment_proposal?: PaymentProposal | null;
   created_at: string;
   sender?: UserProfile;
 }
@@ -293,9 +291,6 @@ export interface Chat {
   locked_reason: string | null;
   job_marked_complete: boolean;
   points_awarded: boolean;
-  payment_status?: PaymentStatus;
-  payment_proposal_id?: string | null;
-  total_paid_cents?: number;
   created_at: string;
   last_message_at: string | null;
   messages?: ChatMessage[];
@@ -320,45 +315,6 @@ export interface ModerationResult {
   category: string | null;
   reason: string | null;
   suggestion?: string | null;
-}
-
-// ─── Stripe Connect Payments ─────────────────────────────────────────────────
-
-export type PaymentStatus =
-  | 'pending'
-  | 'awaiting_payment'
-  | 'processing'
-  | 'paid'
-  | 'failed'
-  | 'refunded'
-  | 'disputed'
-  | 'cancelled';
-
-export interface PaymentProposal {
-  id: string;
-  chat_id: string;
-  shout_id: string;
-  proposed_by_id: string;
-  client_id: string;
-  amount_cents: number;
-  currency: string;
-  description: string;
-  service_fee_cents: number;
-  provider_receives_cents: number;
-  status: PaymentStatus;
-  stripe_payment_intent_id: string | null;
-  stripe_transfer_id: string | null;
-  paid_at: string | null;
-  created_at: string;
-}
-
-export interface StripeConnectAccount {
-  user_id: string;
-  stripe_account_id: string;
-  charges_enabled: boolean;
-  payouts_enabled: boolean;
-  onboarding_complete: boolean;
-  created_at: string;
 }
 
 // ─── Connection Approval ─────────────────────────────────────────────────────

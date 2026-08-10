@@ -20,7 +20,8 @@
       "buildNumber": "1",
       "infoPlist": {
         "NSMicrophoneUsageDescription": "MyKonnect uses your microphone to record voice shout-outs.",
-        "NSPhotoLibraryUsageDescription": "MyKonnect uses your photo library for profile pictures."
+        "NSPhotoLibraryUsageDescription": "MyKonnect uses your photo library for profile pictures.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -32,7 +33,9 @@
       "versionCode": 1,
       "permissions": [
         "RECORD_AUDIO",
-        "READ_EXTERNAL_STORAGE"
+        "READ_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
       ]
     },
     "web": {
@@ -53,13 +56,6 @@
           "icon": "./assets/icon.png",
           "color": "#4F6EF7",
           "sounds": []
-        }
-      ],
-      [
-        "@stripe/stripe-react-native",
-        {
-          "merchantIdentifier": "merchant.app.mykonnect",
-          "enableGooglePay": true
         }
       ]
     ],

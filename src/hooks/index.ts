@@ -8,4 +8,3 @@ export { useFeedbackChannel } from './useFeedbackChannel';
 export { useModeration } from './useModeration';
 export type { ModerationResult } from './useModeration';
 export { useChat } from './useChat';
-export { usePayments } from './usePayments';

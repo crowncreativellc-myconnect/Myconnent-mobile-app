@@ -11,28 +11,21 @@ import {
 } from 'react-native';
 import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { StripeProvider } from '@stripe/stripe-react-native';
 import { useSession } from '../../src/hooks/useSession';
 import { useChat } from '../../src/hooks/useChat';
-import { usePayments } from '../../src/hooks/usePayments';
 import { ChatBubble } from '../../src/components/ChatBubble';
 import { ChatInput } from '../../src/components/ChatInput';
 import { ReportModal } from '../../src/components/ReportModal';
 import { Avatar } from '../../src/components/Avatar';
 import { PointsEarnedPill } from '../../src/components/KonnectPointsBadge';
 import { LoadingSpinner } from '../../src/components/LoadingSpinner';
-import { PaymentProposalCard } from '../../src/components/PaymentProposalCard';
-import { PaymentProposalComposer } from '../../src/components/PaymentProposalComposer';
 import { useTheme } from '../../src/hooks/useTheme';
 import { URGENCY_COLORS, URGENCY_LABELS } from '../../src/utils';
 import type {
   ChatMessage,
   ChatReportReason,
-  PaymentProposal,
   UserProfile,
 } from '../../src/types';
-
-const STRIPE_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? '';
 
 export default function ChatScreen() {
   const { shoutId } = useLocalSearchParams<{ shoutId: string }>();
@@ -55,15 +48,6 @@ export default function ChatScreen() {
     blockUser,
   } = useChat();
 
-  const {
-    proposePayment,
-    initiatePayment,
-    startProviderOnboarding,
-    fetchProposalForChat,
-    subscribeToPaymentStatus,
-    checkProviderOnboarding,
-  } = usePayments();
-
   const [reportVisible, setReportVisible] = useState(false);
   const [reportTarget, setReportTarget] = useState<{
     message: ChatMessage;
@@ -74,14 +58,9 @@ export default function ChatScreen() {
     suggestion?: string | null;
   } | null>(null);
   const [showPointsPill, setShowPointsPill] = useState(false);
-  const [pointsPillDelta, setPointsPillDelta] = useState(50);
+  const [pointsPillDelta] = useState(50);
   const pillAnim = useRef(new Animated.Value(0)).current;
   const listRef = useRef<FlatList<ChatMessage>>(null);
-
-  const [proposal, setProposal] = useState<PaymentProposal | null>(null);
-  const [providerOnboardingComplete, setProviderOnboardingComplete] = useState(false);
-  const [composerVisible, setComposerVisible] = useState(false);
-  const [submittingProposal, setSubmittingProposal] = useState(false);
 
   // ─── Load chat ──────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -108,47 +87,6 @@ export default function ChatScreen() {
     };
   }, [chat?.id, subscribeToMessages, setMessages]);
 
-  // ─── Fetch latest proposal for this chat on mount ───────────────────────────
-  useEffect(() => {
-    if (!chat?.id) return;
-    fetchProposalForChat(chat.id).then((res) => {
-      if (res.data) setProposal(res.data);
-    });
-  }, [chat?.id, fetchProposalForChat]);
-
-  // ─── Subscribe to payment status updates ────────────────────────────────────
-  useEffect(() => {
-    if (!proposal?.id) return;
-
-    const channel = subscribeToPaymentStatus(proposal.id, (updated) => {
-      const wasPaid = proposal.status === 'paid';
-      setProposal(updated);
-
-      if (updated.status === 'paid' && !wasPaid && profile) {
-        const isProvider = updated.proposed_by_id === profile.id;
-        setPointsPillDelta(isProvider ? 50 : 20);
-        setShowPointsPill(true);
-        Animated.sequence([
-          Animated.timing(pillAnim, { toValue: 1, duration: 300, useNativeDriver: true }),
-          Animated.delay(1800),
-          Animated.timing(pillAnim, { toValue: 0, duration: 250, useNativeDriver: true }),
-        ]).start(() => setShowPointsPill(false));
-      }
-    });
-
-    return () => {
-      channel.unsubscribe();
-    };
-  }, [proposal?.id, proposal?.status, subscribeToPaymentStatus, profile, pillAnim]);
-
-  // ─── Provider: check own onboarding state ───────────────────────────────────
-  useEffect(() => {
-    if (!profile) return;
-    checkProviderOnboarding(profile.id).then((res) => {
-      if (res.data) setProviderOnboardingComplete(res.data.onboardingComplete);
-    });
-  }, [profile, checkProviderOnboarding]);
-
   // ─── Mark messages read on focus ────────────────────────────────────────────
   useFocusEffect(
     useCallback(() => {
@@ -160,16 +98,6 @@ export default function ChatScreen() {
   const otherParticipant: UserProfile | undefined = chat?.participants?.find(
     (p) => p.id !== profile?.id,
   );
-
-  // The "service provider" is whoever accepted the shout, not the author.
-  const isServiceProvider = Boolean(
-    chat?.shout && profile && chat.shout.accepted_by_id === profile.id,
-  );
-
-  const paymentCompleted =
-    proposal?.status === 'paid' || chat?.payment_status === 'paid';
-  const showPaymentButton =
-    isServiceProvider && !paymentCompleted && !isChatLocked;
 
   const handleSend = async (body: string) => {
     if (!chat?.id) return;
@@ -255,7 +183,6 @@ export default function ChatScreen() {
       return;
     }
     setShowPointsPill(true);
-    setPointsPillDelta(50);
     Animated.sequence([
       Animated.timing(pillAnim, { toValue: 1, duration: 300, useNativeDriver: true }),
       Animated.delay(1800),
@@ -302,49 +229,6 @@ export default function ChatScreen() {
     ]);
   };
 
-  // ─── Payment handlers ───────────────────────────────────────────────────────
-  const handleOpenComposer = async () => {
-    if (!profile) return;
-    const onboarding = await checkProviderOnboarding(profile.id);
-    setProviderOnboardingComplete(onboarding.data?.onboardingComplete ?? false);
-
-    if (!onboarding.data?.onboardingComplete) {
-      Alert.alert(
-        'Set up payments first',
-        'You need to finish Stripe onboarding before you can request payments.',
-        [
-          { text: 'Not now', style: 'cancel' },
-          { text: 'Set up', onPress: () => startProviderOnboarding() },
-        ],
-      );
-      return;
-    }
-    setComposerVisible(true);
-  };
-
-  const handleSubmitProposal = async (amountDollars: number, description: string) => {
-    if (!chat?.id || !chat.shout_id) return;
-    setSubmittingProposal(true);
-    const result = await proposePayment(chat.id, chat.shout_id, amountDollars, description);
-    setSubmittingProposal(false);
-    if (result.error) {
-      Alert.alert('Could not send request', result.error.message);
-      return;
-    }
-    setProposal(result.data);
-    setComposerVisible(false);
-  };
-
-  const handlePayProposal = async (proposalId: string) => {
-    const result = await initiatePayment(proposalId);
-    if (result.error) Alert.alert('Payment error', result.error.message);
-  };
-
-  const handleProviderOnboard = async () => {
-    const result = await startProviderOnboarding();
-    if (result.error) Alert.alert('Onboarding error', result.error.message);
-  };
-
   if (isFetching || !chat) {
     return <LoadingSpinner label="Opening chat…" />;
   }
@@ -352,11 +236,7 @@ export default function ChatScreen() {
   const reversedMessages = [...messages].reverse();
 
   return (
-    <StripeProvider
-      publishableKey={STRIPE_PUBLISHABLE_KEY}
-      merchantIdentifier="merchant.app.mykonnect"
-    >
-      <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['top']}>
         <KeyboardAvoidingView
           style={{ flex: 1 }}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -509,24 +389,6 @@ export default function ChatScreen() {
             renderItem={({ item }) => {
               const isOwn = item.sender_id === profile?.id;
               const sender = chat.participants?.find((p) => p.id === item.sender_id);
-
-              if (
-                item.message_type === 'payment_proposal' &&
-                proposal &&
-                (item.payment_proposal_id === proposal.id ||
-                  item.payment_proposal?.id === proposal.id)
-              ) {
-                return (
-                  <PaymentProposalCard
-                    proposal={proposal}
-                    currentUserId={profile?.id ?? ''}
-                    providerOnboardingComplete={providerOnboardingComplete}
-                    onPay={handlePayProposal}
-                    onProviderOnboard={handleProviderOnboard}
-                  />
-                );
-              }
-
               return (
                 <ChatBubble
                   message={item}
@@ -586,8 +448,6 @@ export default function ChatScreen() {
             isScreening={isScreening}
             isLocked={isChatLocked}
             onMarkComplete={handleMarkComplete}
-            showPaymentButton={showPaymentButton}
-            onOpenPaymentComposer={handleOpenComposer}
           />
         </KeyboardAvoidingView>
 
@@ -616,15 +476,6 @@ export default function ChatScreen() {
           onSubmit={handleReportSubmit}
           type={reportTarget?.type ?? 'message'}
         />
-
-        {/* ── Payment composer ──────────────────────────────────────────── */}
-        <PaymentProposalComposer
-          visible={composerVisible}
-          onClose={() => setComposerVisible(false)}
-          onSubmit={handleSubmitProposal}
-          isSubmitting={submittingProposal}
-        />
       </SafeAreaView>
-    </StripeProvider>
   );
 }
