@@ -61,7 +61,7 @@ $$;
 
 -- ─── 2. Hashed contacts table ───────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.hashed_contacts (
-  id         uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id    uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
   hash       text NOT NULL,
   hash_type  text NOT NULL CHECK (hash_type IN ('email','phone')),

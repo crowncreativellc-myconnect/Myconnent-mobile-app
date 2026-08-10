@@ -406,7 +406,7 @@ create trigger on_approval_complete
 
 -- ─── Hashed Contacts (silent 2nd-degree bridging) ────────────────────────────
 create table if not exists hashed_contacts (
-  id         uuid primary key default uuid_generate_v4(),
+  id         uuid primary key default gen_random_uuid(),
   user_id    uuid not null references profiles(id) on delete cascade,
   hash       text not null,
   hash_type  text not null check (hash_type in ('email','phone')),
