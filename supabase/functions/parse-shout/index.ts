@@ -164,7 +164,10 @@ Always write draft_text in clear professional English regardless of input slang.
     });
 
     const content = message.content[0].type === 'text' ? message.content[0].text : '{}';
-    const parsed: ParseResponse = JSON.parse(content);
+    // Claude sometimes wraps JSON in ```json ... ``` fences despite the system
+    // prompt telling it not to. Strip them before parsing.
+    const jsonText = content.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim();
+    const parsed: ParseResponse = JSON.parse(jsonText);
 
     // ─── Phase 2: degree-expansion matching ────────────────────────────────
     // Only run when the caller supplied an author_id. The matching phase is
