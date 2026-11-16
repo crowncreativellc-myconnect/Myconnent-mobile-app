@@ -51,8 +51,8 @@ async function registerForPushNotifications(): Promise<string | null> {
 
 export function usePushNotifications() {
   const { userId } = useSession();
-  const notificationListener = useRef<Notifications.EventSubscription>();
-  const responseListener = useRef<Notifications.EventSubscription>();
+  const notificationListener = useRef<Notifications.EventSubscription | undefined>(undefined);
+  const responseListener = useRef<Notifications.EventSubscription | undefined>(undefined);
 
   useEffect(() => {
     if (!userId) return;
