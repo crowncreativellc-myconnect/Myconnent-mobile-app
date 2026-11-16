@@ -11,6 +11,11 @@
 --
 -- TO CLEAN UP (remove all test data):
 --   Run the DELETE block at the bottom of this file
+--
+-- NOTE: the fixed test UUIDs below use '7e57' ("test" in hex) for their middle
+-- segments. UUID literals are hex-only, so a literal '-test-' segment is
+-- rejected by Postgres with "invalid input syntax for type uuid". Keep any new
+-- test IDs hex.
 -- ─────────────────────────────────────────────────────────────────────────────
 
 -- Bypass FK constraints so we can create profiles without auth.users rows
@@ -22,13 +27,13 @@ DECLARE
   my_user_id   uuid := 'YOUR-USER-ID-HERE';
 
   -- Fixed UUIDs so cleanup is reliable
-  alex_id      uuid := '11111111-test-test-test-000000000001';
-  blake_id     uuid := '11111111-test-test-test-000000000002';
-  casey_id     uuid := '11111111-test-test-test-000000000003';
-  drew_id      uuid := '11111111-test-test-test-000000000004';
-  ellis_id     uuid := '11111111-test-test-test-000000000005';
-  frankie_id   uuid := '11111111-test-test-test-000000000006';
-  outsider_id  uuid := '11111111-test-test-test-000000000007';
+  alex_id      uuid := '11111111-7e57-7e57-7e57-000000000001';
+  blake_id     uuid := '11111111-7e57-7e57-7e57-000000000002';
+  casey_id     uuid := '11111111-7e57-7e57-7e57-000000000003';
+  drew_id      uuid := '11111111-7e57-7e57-7e57-000000000004';
+  ellis_id     uuid := '11111111-7e57-7e57-7e57-000000000005';
+  frankie_id   uuid := '11111111-7e57-7e57-7e57-000000000006';
+  outsider_id  uuid := '11111111-7e57-7e57-7e57-000000000007';
 
 BEGIN
 
@@ -131,7 +136,7 @@ BEGIN
   ) VALUES
 
   -- Matches Blake at 2nd degree
-  ('22222222-test-test-test-000000000001',
+  ('22222222-7e57-7e57-7e57-000000000001',
    outsider_id,
    'Need a React Native developer for a fintech MVP sprint',
    null,
@@ -142,7 +147,7 @@ BEGIN
    null, null, null, now() - interval '30 minutes', now()),
 
   -- Matches Casey at 3rd degree
-  ('22222222-test-test-test-000000000002',
+  ('22222222-7e57-7e57-7e57-000000000002',
    outsider_id,
    'Need a contract lawyer to review an NDA this week',
    null,
@@ -153,7 +158,7 @@ BEGIN
    null, null, null, now() - interval '1 hour', now()),
 
   -- Matches Drew at 4th degree
-  ('22222222-test-test-test-000000000003',
+  ('22222222-7e57-7e57-7e57-000000000003',
    outsider_id,
    'Looking for a UX designer for a SaaS product redesign',
    null,
@@ -164,7 +169,7 @@ BEGIN
    null, null, null, now() - interval '3 hours', now()),
 
   -- Matches Ellis at 5th degree
-  ('22222222-test-test-test-000000000004',
+  ('22222222-7e57-7e57-7e57-000000000004',
    outsider_id,
    'Need a data scientist to build a churn prediction model',
    null,
@@ -175,7 +180,7 @@ BEGIN
    null, null, null, now() - interval '5 hours', now()),
 
   -- Matches Frankie at 6th degree
-  ('22222222-test-test-test-000000000005',
+  ('22222222-7e57-7e57-7e57-000000000005',
    outsider_id,
    'Need a real estate attorney for a commercial lease negotiation',
    null,
@@ -198,13 +203,13 @@ SET session_replication_role = DEFAULT;
 -- ─────────────────────────────────────────────────────────────────────────────
 /*
 DELETE FROM shouts
-  WHERE id::text LIKE '22222222-test-test-test%';
+  WHERE id::text LIKE '22222222-7e57-7e57-7e57%';
 
 DELETE FROM connections
-  WHERE requester_id::text LIKE '11111111-test-test-test%'
-     OR addressee_id::text LIKE '11111111-test-test-test%'
-     OR requester_id = 'YOUR-USER-ID-HERE'::uuid AND addressee_id::text LIKE '11111111-test-test-test%';
+  WHERE requester_id::text LIKE '11111111-7e57-7e57-7e57%'
+     OR addressee_id::text LIKE '11111111-7e57-7e57-7e57%'
+     OR requester_id = 'YOUR-USER-ID-HERE'::uuid AND addressee_id::text LIKE '11111111-7e57-7e57-7e57%';
 
 DELETE FROM profiles
-  WHERE id::text LIKE '11111111-test-test-test%';
+  WHERE id::text LIKE '11111111-7e57-7e57-7e57%';
 */

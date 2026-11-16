@@ -44,6 +44,9 @@ GoogleService-Info.plist
 *.sublime-project
 *.sublime-workspace
 
+# Supabase CLI local state (project ref, pooler URL, cached service versions)
+supabase/.temp/
+
 # Claude Code
 .claude/settings.local.json
 
